@@ -1,0 +1,198 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+    <title>xatspace - karl</title>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"
+        integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+    <style>
+        html,
+        body {
+            background-image: url(./inc/images/bg.png);
+            background-position: center 80%;
+            background-size: cover;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        #wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            grid-template-columns: repeat(5, 1fr);
+            height: 100%;
+        }
+
+        #name {
+            display: flex;
+            text-align: center;
+            color: #FFF;
+            font-size: 1.6em;
+            padding: 0.3em 0.5em;
+            border-radius: 100px;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        #pkmn-div {
+            display: grid;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #pkmn {
+            grid-area: a;
+            z-index: 998;
+            transform-origin: 50% 100%;
+            animation: tada 2s 1;
+        }
+
+        #pkmn img {
+            height: 100%;
+            width: 100%;
+            border: 0;
+        }
+
+        #shiny {
+            grid-area: a;
+            justify-self: center;
+            height: 200px;
+            width: 200px;
+            mix-blend-mode: screen;
+            z-index: 999;
+        }
+
+        #pokeball {
+            position: fixed;
+            bottom: 0;
+            width: 100px;
+            cursor: pointer;
+            z-index: 9999;
+            animation-name: tada;
+            animation-duration: 2s;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes tada {
+            0% {
+                -webkit-transform: scale3d(1, 1, 1);
+                transform: scale3d(1, 1, 1);
+            }
+
+            10%,
+            20% {
+                -webkit-transform: scale3d(0.9, 0.9, 0.9) rotate3d(0, 0, 1, -3deg);
+                transform: scale3d(0.9, 0.9, 0.9) rotate3d(0, 0, 1, -3deg);
+            }
+
+            30%,
+            50%,
+            70%,
+            90% {
+                -webkit-transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg);
+                transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg);
+            }
+
+            40%,
+            60%,
+            80% {
+                -webkit-transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg);
+                transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg);
+            }
+
+            100% {
+                -webkit-transform: scale3d(1, 1, 1);
+                transform: scale3d(1, 1, 1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Best viewed in vertical mode! -->
+    <div id="wrapper">
+        <div id="name"></div>
+        <div id="pkmn-div">
+            <div id="pkmn"></div>
+            <img id="shiny"
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" />
+        </div>
+        <img id="pokeball" src="./inc/images/pokeball.png" onclick="generatePokemon()" data-toggle="tooltip"
+            title="Generate New!" />
+    </div>
+</body>
+<script>
+    const pokemonPath = "https://db.pokemongohub.net/images/ingame/normal/"
+
+    const generatePokemon = () => {
+        const pokeArr = [197, 3, 113];
+        const friends = {
+            197: 'umbreon',
+            3: 'letspootogether'
+            113: 'mia'
+        };
+        let pokenum = pokeArr[Math.floor(Math.random() * pokeArr.length)];
+        let shiny = Math.floor(Math.random() * 10)
+        let pokemon = `${pokemonPath}pokemon_icon_${pokenum}_00${shiny == 1 ? '_shiny' : ''}.png`
+
+        // Hide elements
+        $("#pkmn").hide().css("visibility", "hidden")
+        $("#shiny").attr("src", "").hide()
+        $("#name").hide()
+
+        // Check if image of chosen Pokémon exists since not all are available yet
+        checkImage(
+            pokemon,
+            () => {
+                // If yes, change the name, image and the cry
+                getName(pokenum, shiny)
+                $("#pkmn").html(
+                    Object.keys(friends).includes(pokenum.toString()) ? `<a href="https://xat.me/${friends[pokenum.toString()]}"><img src="${pokemon}" /></a>` : `<img src="${pokemon}" />`
+                ).fadeIn()
+                $("#pkmn").css("visibility", "visible")
+
+                // If shiny, then show shiny animation
+                if(shiny == 1) {
+                    $("#shiny").attr("src", "./inc/images/shiny.gif").show()
+                }
+            },
+            () => {
+                // If not generate a new Pokémon
+                generatePokemon()
+            }
+        )
+    }
+
+    // Function to check if image exists
+    const checkImage = (src, success, fail) => {
+        var img = new Image()
+        img.onload = success
+        img.onerror = fail
+        img.src = src
+    }
+
+    // Function to get Pokémon name from pokeapi
+    async function getName(num, shiny) {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${num}`, {})
+        const json = await response.json()
+        $("#name").html(`${shiny == 1 ? 'Shiny ' : ''}${capitalize(json.name)}`).fadeIn()
+    }
+    // Capitalise first letter of a string
+    const capitalize = (str) => {
+        return str.toLowerCase().replace(/\b[a-z]/g, (letter) => {
+            return letter.toUpperCase()
+        })
+    }
+    // Pad a number with leading zeroes for the cry
+    const pad = (str, max) => {
+        str = str.toString()
+        return str.length < max ? pad("0" + str, max) : str
+    }
+    // Generate a Pokémon on first load
+    generatePokemon()
+</script>
+
+</html>
